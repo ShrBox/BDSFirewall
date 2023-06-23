@@ -21,7 +21,7 @@
 #define PLUGIN_NAME "BDSFirewall"
 // Describe what your plugin does
 // We recommend you start the introduction with a third-person singular verb.
-#define PLUGIN_INTRODUCTION ""
+#define PLUGIN_INTRODUCTION "Firewall for BDS"
 #define PLUGIN_AUTHOR "ShrBox"
 
 // The version of your plugin. If you do not know how to set it, please refer
