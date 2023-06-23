@@ -53,7 +53,7 @@ void RakAddToBanList(RakNet::RakPeer* _this, std::string& address, unsigned int 
 // MotdFlood protection
 TInstanceHook(RakPacket*, "?Receive@RakPeer@RakNet@@UEAAPEAUPacket@2@XZ", RakNet::RakPeer) {
     RakPacket* pkt = original(this);
-    if (pkt && pkt->data[0] == 0x01) {
+    if (pkt && pkt->data[0] == 0x01 || pkt->data[0] == 0x07) {
         std::string address = pkt->systemAddress.ToString(false, 124);
         if (!address.empty()) {
 //            if (BlackList::query(address)) {
