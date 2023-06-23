@@ -4,10 +4,7 @@
  */
 
 #include <llapi/LoggerAPI.h>
-#include "version.h"
-#include <llapi/mc/ServerNetworkHandler.hpp>
-#include <llapi/mc/NetworkIdentifier.hpp>
-#include <llapi/mc/LoginPacket.hpp>
+#include <llapi/mc/RakNet.hpp>
 #include <llapi/HookAPI.h>
 #include "blacklist.h"
 
@@ -25,7 +22,7 @@ void PluginInit()
     std::thread([]{
         while (!ll::isServerStopping()) {
             LoginPacketTries.clear();
-            std::this_thread::sleep_for(std::chrono::seconds(60));
+            std::this_thread::sleep_for(std::chrono::seconds(20));
         }
     }).detach();
     logger.info("Firewall enabled!");
@@ -39,21 +36,38 @@ std::string splitAddress(std::string& address) {
     return {};
 }
 
-TInstanceHook(void, "?handle@ServerNetworkHandler@@UEAAXAEBVNetworkIdentifier@@AEBVLoginPacket@@@Z", ServerNetworkHandler, NetworkIdentifier* ni, const LoginPacket* pkt) {
-    std::string address = ni->getIP();
-    if (!address.empty()) {
-        std::string newAddress = splitAddress(address);
-        if (BlackList::query(newAddress)) {
-            return;
-        }
-        LoginPacketTries[newAddress] = ++LoginPacketTries[newAddress];
-        logger.debug("IP: {} Tries: {}", address, LoginPacketTries[newAddress]);
-        if (LoginPacketTries[newAddress] >= 20) {
-            logger.warn("LoginPacketFlood detected! IP: {}", address);
-            BlackList::add(newAddress);
-            logger.warn("IP: {} has been added into BlackList", newAddress);
-            return;
+struct RakPacket
+{
+    RakNet::SystemAddress systemAddress;
+    RakNet::RakNetGUID guid;
+    unsigned int length;
+    uint32_t bitSize;
+    unsigned char* data;
+    bool deleteData;
+    bool wasGeneratedLocally;
+};
+
+void RakAddToBanList(RakNet::RakPeer* _this, std::string& address, unsigned int time) {
+    SymCall("?AddToBanList@RakPeer@RakNet@@UEAAXPEBDI@Z", void, RakNet::RakPeer*, const char*, unsigned int)(_this, address.c_str(), time);
+}
+// MotdFlood protection
+TInstanceHook(RakPacket*, "?Receive@RakPeer@RakNet@@UEAAPEAUPacket@2@XZ", RakNet::RakPeer) {
+    RakPacket* pkt = original(this);
+    if (pkt && pkt->data[0] == 0x01) {
+        std::string address = pkt->systemAddress.ToString(false, 124);
+        if (!address.empty()) {
+//            if (BlackList::query(address)) {
+//                return pkt;
+//            }
+            LoginPacketTries[address] = ++LoginPacketTries[address];
+            logger.debug("IP: {} Tries: {}", address, LoginPacketTries[address]);
+            if (LoginPacketTries[address] >= 20) {
+                logger.warn("MotdFlood detected! IP: {}", address);
+                RakAddToBanList(this, address, 0);
+                logger.warn("IP: {} has been added into BlackList", address);
+                return pkt;
+            }
         }
     }
-    return original(this, ni, pkt);
+    return pkt;
 }
