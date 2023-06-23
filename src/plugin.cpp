@@ -53,7 +53,7 @@ void RakAddToBanList(RakNet::RakPeer* _this, std::string& address, unsigned int 
 // MotdFlood protection
 TInstanceHook(RakPacket*, "?Receive@RakPeer@RakNet@@UEAAPEAUPacket@2@XZ", RakNet::RakPeer) {
     RakPacket* pkt = original(this);
-    if (pkt && pkt->data[0] == 0x01 || pkt->data[0] == 0x07) {
+    if (pkt && (pkt->data[0] == 0x01 || pkt->data[0] == 0x07)) {
         std::string address = pkt->systemAddress.ToString(false, 124);
         if (!address.empty()) {
 //            if (BlackList::query(address)) {
@@ -61,7 +61,7 @@ TInstanceHook(RakPacket*, "?Receive@RakPeer@RakNet@@UEAAPEAUPacket@2@XZ", RakNet
 //            }
             LoginPacketTries[address] = ++LoginPacketTries[address];
             logger.debug("IP: {} Tries: {}", address, LoginPacketTries[address]);
-            if (LoginPacketTries[address] >= 20) {
+            if (LoginPacketTries[address] > 25) {
                 logger.warn("MotdFlood detected! IP: {}", address);
                 RakAddToBanList(this, address, 0);
                 logger.warn("IP: {} has been added into BlackList", address);
