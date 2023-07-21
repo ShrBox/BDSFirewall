@@ -56,12 +56,11 @@ THook(bool,
       "?ProcessOfflineNetworkPacket@RakNet@@YA_NUSystemAddress@1@PEBDHPEAVRakPeer@1@PEAVRakNetSocket2@1@PEA_N_K@Z",
       RakNet::SystemAddress systemAddress, const char *data, const int length, RakNet::RakPeer *rakPeer,
       void *rakNetSocket, bool *isOfflineMessage, void *timeRead) {
-    bool rtn = original(systemAddress, data, length, rakPeer, rakNetSocket, isOfflineMessage, timeRead);
     if ((unsigned char)data[0] == 0x07) {
         std::string address = systemAddress.ToString(false, 124);
         if (!address.empty()) {
             if (BlackList::query(address)) {
-                return rtn;
+                return false;
             }
             LoginPacketTries[address] = ++LoginPacketTries[address];
             logger.debug("IP: {} Tries: {}", address, LoginPacketTries[address]);
@@ -72,5 +71,5 @@ THook(bool,
             }
         }
     }
-    return rtn;
+    return original(systemAddress, data, length, rakPeer, rakNetSocket, isOfflineMessage, timeRead);;
 }
