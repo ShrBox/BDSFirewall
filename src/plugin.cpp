@@ -66,6 +66,7 @@ THook(bool,
             logger.debug("IP: {} Tries: {}", address, LoginPacketTries[address]);
             if (LoginPacketTries[address] >= 5) {
                 logger.warn("LoginFlood detected! IP: {}", address);
+                BlackList::add(address);
                 RakAddToBanList(rakPeer, address, 0);
                 logger.warn("IP: {} has been added into BlackList", address);
             }
