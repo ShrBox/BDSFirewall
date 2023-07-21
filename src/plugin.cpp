@@ -60,9 +60,9 @@ THook(bool,
     if ((unsigned char)data[0] == 0x07) {
         std::string address = systemAddress.ToString(false, 124);
         if (!address.empty()) {
-//            if (BlackList::query(address)) {
-//                return pkt;
-//            }
+            if (BlackList::query(address)) {
+                return rtn;
+            }
             LoginPacketTries[address] = ++LoginPacketTries[address];
             logger.debug("IP: {} Tries: {}", address, LoginPacketTries[address]);
             if (LoginPacketTries[address] >= 5) {
