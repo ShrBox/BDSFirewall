@@ -1,6 +1,8 @@
 name: CMake
 
 on: [push, pull_request]
+permissions:
+  contents: write
 
 env:
   PLUGIN_NAME: BDSFirewall
@@ -67,8 +69,6 @@ jobs:
           cp -f build/Release/*.dll output/${{env.PLUGIN_NAME}}/
           mkdir output/PDB/
           cp -f build/Release/*.pdb output/PDB/
-          # mkdir output/${{env.PLUGIN_NAME}}/${{env.PLUGIN_NAME}}/
-          # cp -r Data/* output/${{env.PLUGIN_NAME}}/${{env.PLUGIN_NAME}}/
         shell: bash
 
       - name: Pack Release
@@ -77,16 +77,7 @@ jobs:
         run: |
           Compress-Archive -Path output\${{env.PLUGIN_NAME}}\ ${{env.PLUGIN_NAME}}.zip
           Compress-Archive -Path output\PDB\ PDB.zip
-
-      - name: Prepare for creating Release
-        working-directory: ${{env.GITHUB_WORKSPACE}}
-        id: rel
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          echo ::set-output name=tag::${GITHUB_REF#refs/tags/*}
-          mv ${{env.PLUGIN_NAME}}.zip ${{env.PLUGIN_NAME}}-${GITHUB_REF#refs/tags/*}.zip
-          mv PDB.zip PDB-${GITHUB_REF#refs/tags/*}.zip
-        shell: bash
+          ls
 
       - name: Upload PLUGIN
         uses: actions/upload-artifact@v3.1.1
@@ -102,11 +93,11 @@ jobs:
 
 
       - name: Create New Release
-        uses: softprops/action-gh-release@v0.1.13
+        uses: softprops/action-gh-release@v0.1.15
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            ${{ github.workspace }}\${{env.PLUGIN_NAME}}.zip
-            ${{ github.workspace }}\PDB.zip
+            ${{env.PLUGIN_NAME}}.zip
+            PDB.zip
         env:
           GITHUB_REPOSITORY: ${{env.GITHUB_ACTION_REPOSITORY}}
